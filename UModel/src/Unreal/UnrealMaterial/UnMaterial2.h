@@ -373,13 +373,17 @@ _ENUM(ETextureFormat)
 enum ETexClampMode
 {
     TC_Wrap,
-    TC_Clamp
+    TC_Clamp,
+    TC_Mirror,
+    TC_Stretch
 };
 
 _ENUM(ETexClampMode)
 {
     _E(TC_Wrap),
-    _E(TC_Clamp)
+    _E(TC_Clamp),
+    _E(TC_Mirror),
+    _E(TC_Stretch),
 };
 
 class UBitmapMaterial : public URenderedMaterial // abstract
@@ -585,7 +589,7 @@ class UTexture : public UBitmapMaterial
             PROP_INT(Split9Y2)
             PROP_INT(Split9Y3)
             PROP_INT(pSplit9TexCacheMap)
-            PROP_BOOL(bSplit9Texture)
+            PROP_BOOL(bTerrainLayerTexture)
             PROP_FLOAT(ScalableRateX)
             PROP_FLOAT(ScalableRateY)
             #if XIII
