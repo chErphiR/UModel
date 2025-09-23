@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- Epic Games, Inc. UE Visualizers -->
+
+	<!-- FString visualizer -->
+	<Type Name="FString">
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax == 0">Empty</DisplayString>
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax &gt; 0">Empty, Max={ArrayMax}</DisplayString>
+		<DisplayString Condition="ArrayNum &lt; 0">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &lt; ArrayNum">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &gt;= ArrayNum">{Data,su}</DisplayString>
+		<StringView Condition="ArrayMax &gt;= ArrayNum">Data,su</StringView>
+		<Expand>
+			<ArrayItems>
+				<Size>(ArrayNum &lt; 0 || ArrayNum &gt; ArrayMax) ? 0 : (ArrayNum == 0) ? 1 : ArrayNum - 1</Size>
+				<!-- When the string is unallocated, point at the zero which is ArrayNum to act as a null terminator, so we can use &Arr[0] in expressions even when there's nothing to point at -->
+				<ValuePointer>(ArrayNum != 0) ? (TCHAR*)Data : (TCHAR*)&amp;ArrayNum</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	
+	<!-- TArray visualizer -->
+	<Type Name="TArray&lt;*&gt;">
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax == 0">Empty</DisplayString>
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax &gt; 0">Empty, Max={ArrayMax}</DisplayString>
+		<DisplayString Condition="ArrayNum &lt; 0">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &lt; ArrayNum">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &gt;= ArrayNum">Num={ArrayNum}, Max={ArrayMax}</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>(ArrayNum &lt;= ArrayMax) ? ArrayNum : 0</Size>
+				<ValuePointer>(TArray&lt;$T1&gt;::ElementType*)Data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<!-- TArray<char> visualizers -->
+	<Type Name="TArray&lt;char&gt;">
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax == 0">Empty</DisplayString>
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax &gt; 0">Empty, Max={ArrayMax}</DisplayString>
+		<DisplayString Condition="ArrayNum &lt; 0">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &lt; ArrayNum">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &gt;= ArrayNum">Num={ArrayNum}, Max={ArrayMax} {(char*)Data,[ArrayNum]s}</DisplayString>
+		<StringView Condition="ArrayMax &gt;= ArrayNum">(char*)Data,[ArrayNum]s</StringView>
+		<Expand>
+			<ArrayItems>
+				<Size>(ArrayNum &lt;= ArrayMax) ? ArrayNum : 0</Size>
+				<ValuePointer>(char*)Data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<!-- TArray<unsigned char> visualizers -->
+	<Type Name="TArray&lt;unsigned char&gt;">
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax == 0">Empty</DisplayString>
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax &gt; 0">Empty, Max={ArrayMax}</DisplayString>
+		<DisplayString Condition="ArrayNum &lt; 0">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &lt; ArrayNum">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &gt;= ArrayNum">Num={ArrayNum}, Max={ArrayMax} {(unsigned char*)Data,[ArrayNum]s}</DisplayString>
+		<StringView Condition="ArrayMax &gt;= ArrayNum">(unsigned char*)Data,[ArrayNum]s</StringView>
+		<Expand>
+			<ArrayItems>
+				<Size>(ArrayNum &lt;= ArrayMax) ? ArrayNum : 0</Size>
+				<ValuePointer>(unsigned char*)Data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<!-- TArray<wchar_t> visualizers -->
+	<Type Name="TArray&lt;wchar_t&gt;">
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax == 0">Empty</DisplayString>
+		<DisplayString Condition="ArrayNum == 0 &amp;&amp; ArrayMax &gt; 0">Empty, Max={ArrayMax}</DisplayString>
+		<DisplayString Condition="ArrayNum &lt; 0">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &lt; ArrayNum">Invalid</DisplayString>
+		<DisplayString Condition="ArrayMax &gt;= ArrayNum">Num={ArrayNum}, Max={ArrayMax} {(wchar_t*)Data,[ArrayNum]su}</DisplayString>
+		<StringView Condition="ArrayMax &gt;= ArrayNum">(wchar_t*)Data,[ArrayNum]su</StringView>
+		<Expand>
+			<ArrayItems>
+				<Size>(ArrayNum &lt;= ArrayMax) ? ArrayNum : 0</Size>
+				<ValuePointer>(wchar_t*)Data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+	<!-- FName visualizer  -->
+	<Type Name="FName">
+		<DisplayString>Idx={Index}, {(wchar_t*)(Core.dll!FName::Names)[Index]->Name}</DisplayString>
+	</Type>
+
+	<Type Name="FNameEntry">
+		<DisplayString>{Name}</DisplayString>
+	</Type>
+
+
+	<Type Name="FGuid">
+		<DisplayString>{{{A,Xb}-{(unsigned __int16)(B >> 16),Xb}-{(unsigned __int16)B,Xb}-{(unsigned __int16)(C >> 16),Xb}-{(unsigned __int16)C,Xb}{D,Xb}}}</DisplayString>
+		<Expand>
+			<Item Name="A">A,X</Item>
+			<Item Name="B">B,X</Item>
+			<Item Name="C">C,X</Item>
+			<Item Name="D">D,X</Item>
+		</Expand>
+	</Type>
+
+
+
+	<Type Name="TVector&lt;*&gt;">
+		<DisplayString>{{X={X} Y={Y} Z={Z}}}</DisplayString>
+		<Expand>
+			<Item Name="X">X</Item>
+			<Item Name="Y">Y</Item>
+			<Item Name="Z">Z</Item>
+			<Item Name="||V||&#xB2;">X*X + Y*Y + Z*Z</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="TQuat&lt;*&gt;">
+		<DisplayString>{{X={X} Y={Y} Z={Z} W={W}}}</DisplayString>
+		<Expand>
+			<Item Name="X">X</Item>
+			<Item Name="Y">Y</Item>
+			<Item Name="Z">Z</Item>
+			<Item Name="W">W</Item>
+			<Item Name="||Q||&#xB2;">X*X + Y*Y + Z*Z + W*W</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="FRotator">
+		<DisplayString>{{Pitch={Pitch} Yaw={Yaw} Roll={Roll}}}</DisplayString>
+		<Expand>
+			<Item Name="Pitch (Y)">Pitch</Item>
+			<Item Name="Yaw (Z)">Yaw</Item>
+			<Item Name="Roll (X)">Roll</Item>
+		</Expand>
+	</Type>
+
+	<!-- UObjectBase visualizer -->
+	<Type Name="UObjectBase">
+		<DisplayString>(Name={NamePrivate})</DisplayString>
+	</Type>
+
+	<!-- FField visualizer -->
+	<Type Name="FField">
+		<DisplayString>Name={NamePrivate}</DisplayString>
+	</Type>
+
+	<!-- TMapBase visualizer -->
+	<Type Name="TMapBase&lt;*,*,*,*&gt;">
+		<DisplayString>{Pairs}</DisplayString>
+		<Expand>
+			<ExpandedItem>Pairs</ExpandedItem>
+		</Expand>
+	</Type>
+
+</AutoVisualizer>

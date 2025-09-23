@@ -1460,7 +1460,7 @@ class UMeshAnimation : public UObject
                     if (Ar.Game == GAME_Lineage2)
                         SerializeLineageMoves(Ar);
                     else
-                    #endif // LINEAGE2
+                #endif // LINEAGE2
                         Ar << Moves;
                 Ar << AnimSeqs;
                 #if SPLINTER_CELL

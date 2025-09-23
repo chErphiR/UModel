@@ -563,15 +563,16 @@ void USkeletalMesh::Serialize(FArchive& Ar)
         #if LINEAGE2
         if (Ar.Game == GAME_Lineage2)
         {
-            int unk1, unk3, unk4;
-            TArray<float> unk2;
+            int RenderDynamicHairMeshType, unk4;
+            TArray<float> EffectWArray;
             if (Ar.ArVer >= 118 && Ar.ArLicenseeVer >= 3)
-                Ar << unk1;
-            if (Ar.ArVer >= 123 && Ar.ArLicenseeVer >= 0x12)
-                Ar << unk2;
+                Ar << RenderDynamicHairMeshType;
+            if (Ar.ArVer >= 123 && Ar.ArLicenseeVer >= 18) {
+                Ar << EffectWArray;
+            }
             if (Ar.ArVer >= 120)
-                Ar << unk3; // AuthKey ?
-            if (Ar.ArLicenseeVer >= 0x23)
+                Ar << AuthKey;
+            if (Ar.ArLicenseeVer >= 35)
                 Ar << unk4;
             ConvertMesh();
             return;

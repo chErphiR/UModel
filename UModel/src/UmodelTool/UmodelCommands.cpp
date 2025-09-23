@@ -31,6 +31,9 @@ bool ExportObjects(const TArray<UObject*>* Objects, IProgressCallback* progress)
 
             if (!objectSelected) continue;
 
+            if (!IsValidName(ExpObj->Name))
+                continue;
+
             if (notifyPackage != ExpObj->Package)
             {
                 notifyPackage = ExpObj->Package;
