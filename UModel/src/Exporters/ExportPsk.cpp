@@ -595,6 +595,151 @@ const UObject* GetPrimaryAnimObject(const CAnimSet* Anim)
     unguard;
 }
 
+// Export animation notifies to UC file
+// Format: #exec ANIM NOTIFY SEQ=SeqName TIME=0.5 FUNCTION=FunctionName
+// For sounds: #exec ANIM NOTIFY SEQ=SeqName TIME=0.5 FUNCTION=PlaySound SOUND=SoundName
+static void ExportAnimScript(const CAnimSet* Anim, const UObject* OriginalAnim)
+{
+    guard(ExportAnimScript)
+        ;
+
+        // Check if we have any notifies to export
+        bool hasNotifies = false;
+        for (int i = 0; i < Anim->Sequences.Num(); i++)
+        {
+            if (Anim->Sequences[i]->Notifys.Num() > 0)
+            {
+                hasNotifies = true;
+                break;
+            }
+        }
+
+        if (!hasNotifies)
+            return; // No notifies to export
+
+        FArchive* Ar0 = CreateExportArchive(OriginalAnim, EFileArchiveOptions::TextFile, "%s.uc", OriginalAnim->Name);
+        if (!Ar0) return;
+        FArchive& Ar = *Ar0;
+
+        // Write header comment
+        Ar.Printf("// Animation notifies for %s\n", OriginalAnim->Name);
+        Ar.Printf("// Exported from package: %s\n", OriginalAnim->GetPackageName());
+        Ar.Printf("// Animation file: %s.psa\n\n", OriginalAnim->Name);
+
+        // Export notifies for each sequence
+        for (int seqIdx = 0; seqIdx < Anim->Sequences.Num(); seqIdx++)
+        {
+            const CAnimSequence& Seq = *Anim->Sequences[seqIdx];
+            
+            if (Seq.Notifys.Num() == 0)
+                continue;
+
+            Ar.Printf("// Sequence: %s (Frames: %d, Rate: %.2f)\n", *Seq.Name, Seq.NumFrames, Seq.Rate);
+
+            for (int notifyIdx = 0; notifyIdx < Seq.Notifys.Num(); notifyIdx++)
+            {
+                const CAnimNotify& N = Seq.Notifys[notifyIdx];
+
+                // Calculate time in seconds based on normalized time
+                float timeInSeconds = 0;
+                if (Seq.Rate > 0 && Seq.NumFrames > 0)
+                {
+                    timeInSeconds = N.Time * (Seq.NumFrames / Seq.Rate);
+                }
+
+                switch (N.Type)
+                {
+                case EAnimNotifyType::Sound:
+                    if (N.SoundName.Len() > 0)
+                    {
+                        Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=PlaySound SOUND=%s",
+                            *Seq.Name, N.Time, *N.SoundName);
+                        if (N.Volume != 1.0f)
+                            Ar.Printf(" VOLUME=%g", N.Volume);
+                        if (N.Radius != 0)
+                            Ar.Printf(" RADIUS=%d", N.Radius);
+                        Ar.Printf("\n");
+                    }
+                    else if (N.Function.Len() > 0 && N.Function != "PlaySound" && N.Function != "None")
+                    {
+                        // Voice notify without specific sound - export function name (e.g., AttackVoice)
+                        Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=%s\n",
+                            *Seq.Name, N.Time, *N.Function);
+                    }
+                    // else: skip notify without sound and without function
+                    break;
+
+                case EAnimNotifyType::Effect:
+                    Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=SpawnEffect",
+                        *Seq.Name, N.Time);
+                    if (N.EffectClassName.Len() > 0)
+                        Ar.Printf(" EFFECT=%s", *N.EffectClassName);
+                    if (N.BoneName.Len() > 0)
+                        Ar.Printf(" BONE=%s", *N.BoneName);
+                    Ar.Printf("\n");
+                    break;
+
+                case EAnimNotifyType::Script:
+                case EAnimNotifyType::Trigger:
+                    if (N.Function.Len() > 0)
+                    {
+                        Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=%s\n",
+                            *Seq.Name, N.Time, *N.Function);
+                    }
+                    break;
+
+                case EAnimNotifyType::DestroyEffect:
+                    Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=DestroyEffect\n",
+                        *Seq.Name, N.Time);
+                    break;
+
+                // Lineage 2 specific combat notifies
+                case EAnimNotifyType::AttackShot:
+                case EAnimNotifyType::AttackItem:
+                case EAnimNotifyType::Illusion:
+                    Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=%s\n",
+                        *Seq.Name, N.Time, *N.Function);
+                    break;
+
+                case EAnimNotifyType::AttackVoice:
+                    // AttackVoice may have optional sound
+                    if (N.SoundName.Len() > 0)
+                    {
+                        Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=AttackVoice SOUND=%s",
+                            *Seq.Name, N.Time, *N.SoundName);
+                        if (N.Volume != 1.0f)
+                            Ar.Printf(" VOLUME=%g", N.Volume);
+                        Ar.Printf("\n");
+                    }
+                    else
+                    {
+                        Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=AttackVoice\n",
+                            *Seq.Name, N.Time);
+                    }
+                    break;
+
+                default:
+                    // Unknown type - export with function if available
+                    if (N.Function.Len() > 0)
+                    {
+                        Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=%s\n",
+                            *Seq.Name, N.Time, *N.Function);
+                    }
+                    else
+                    {
+                        Ar.Printf("// Unknown notify type at TIME=%g\n", N.Time);
+                    }
+                    break;
+                }
+            }
+            Ar.Printf("\n");
+        }
+
+        delete Ar0;
+
+    unguard;
+}
+
 static void DoExportPsa(const CAnimSet* Anim, const UObject* OriginalAnim)
 {
     guard(DoExportPsa)
@@ -840,6 +985,12 @@ static void DoExportPsa(const CAnimSet* Anim, const UObject* OriginalAnim)
 
                 delete PropAr;
             }
+        }
+
+        // Export animation notifies to UC file
+        if (GExportScripts)
+        {
+            ExportAnimScript(Anim, OriginalAnim);
         }
 
     unguard;
