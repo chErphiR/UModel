@@ -640,6 +640,37 @@ static void ExportAnimScript(const CAnimSet* Anim, const UObject* OriginalAnim)
             {
                 const CAnimNotify& N = Seq.Notifys[notifyIdx];
 
+                // Skip invalid notifies: FUNCTION=None or empty with no useful data
+                bool isValid = true;
+                if (N.Function == "None" || N.Function.Len() == 0)
+                {
+                    // Check if notify has any useful data
+                    bool hasSound = N.SoundName.Len() > 0;
+                    bool hasFootsteps = false;
+                    for (int si = 0; si < 3; si++)
+                    {
+                        if (N.DefaultWalkSound[si].Len() > 0 || N.DefaultRunSound[si].Len() > 0 ||
+                            N.GrassWalkSound[si].Len() > 0 || N.GrassRunSound[si].Len() > 0 ||
+                            N.WaterWalkSound[si].Len() > 0 || N.WaterRunSound[si].Len() > 0 ||
+                            N.DefaultActorWalkSound[si].Len() > 0 || N.DefaultActorRunSound[si].Len() > 0)
+                        {
+                            hasFootsteps = true;
+                            break;
+                        }
+                    }
+                    bool hasEffect = N.EffectClassName.Len() > 0;
+                    bool hasVoiceType = N.VoiceType.Len() > 0;
+                    
+                    // Invalid if no sound, no footsteps, no effect, no voice type
+                    if (!hasSound && !hasFootsteps && !hasEffect && !hasVoiceType)
+                    {
+                        isValid = false;
+                    }
+                }
+                
+                if (!isValid)
+                    continue; // Skip this notify
+
                 // Calculate time in seconds based on normalized time
                 float timeInSeconds = 0;
                 if (Seq.Rate > 0 && Seq.NumFrames > 0)
@@ -800,16 +831,13 @@ static void ExportAnimScript(const CAnimSet* Anim, const UObject* OriginalAnim)
                     break;
 
                 default:
-                    // Unknown type - export with function if available
-                    if (N.Function.Len() > 0)
+                    // Unknown type - export with function if available and not "None"
+                    if (N.Function.Len() > 0 && N.Function != "None")
                     {
                         Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=%s\n",
                             *Seq.Name, N.Time, *N.Function);
                     }
-                    else
-                    {
-                        Ar.Printf("// Unknown notify type at TIME=%g\n", N.Time);
-                    }
+                    // Skip notifies with FUNCTION=None or empty
                     break;
                 }
             }
