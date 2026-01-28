@@ -658,15 +658,66 @@ static void ExportAnimScript(const CAnimSet* Anim, const UObject* OriginalAnim)
                             Ar.Printf(" VOLUME=%g", N.Volume);
                         if (N.Radius != 0)
                             Ar.Printf(" RADIUS=%d", N.Radius);
+                        // Export VoiceType if present (for PawnStatusVoice)
+                        if (N.VoiceType.Len() > 0)
+                            Ar.Printf(" VOICETYPE=%s", *N.VoiceType);
                         Ar.Printf("\n");
                     }
-                    else if (N.Function.Len() > 0 && N.Function != "PlaySound" && N.Function != "None")
+                    else
                     {
-                        // Voice notify without specific sound - export function name (e.g., AttackVoice)
-                        Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=%s\n",
-                            *Seq.Name, N.Time, *N.Function);
+                        // Check for L2 footstep sound arrays
+                        bool hasFootstepSounds = false;
+                        for (int si = 0; si < 3; si++)
+                        {
+                            if (N.DefaultWalkSound[si].Len() > 0 || N.DefaultRunSound[si].Len() > 0 ||
+                                N.GrassWalkSound[si].Len() > 0 || N.GrassRunSound[si].Len() > 0 ||
+                                N.WaterWalkSound[si].Len() > 0 || N.WaterRunSound[si].Len() > 0 ||
+                                N.DefaultActorWalkSound[si].Len() > 0 || N.DefaultActorRunSound[si].Len() > 0)
+                            {
+                                hasFootstepSounds = true;
+                                break;
+                            }
+                        }
+                        
+                        if (hasFootstepSounds)
+                        {
+                            // Export footstep notify with all sound arrays
+                            Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=FootstepSound",
+                                *Seq.Name, N.Time);
+                            if (N.Volume != 1.0f)
+                                Ar.Printf(" VOLUME=%g", N.Volume);
+                            if (N.SoundRandom != 0)
+                                Ar.Printf(" RANDOM=%d", N.SoundRandom);
+                            
+                            // Export sound arrays (comma-separated within each array)
+                            for (int si = 0; si < 3; si++)
+                            {
+                                if (N.DefaultWalkSound[si].Len() > 0)
+                                    Ar.Printf(" DEFWALK%d=%s", si, *N.DefaultWalkSound[si]);
+                                if (N.DefaultRunSound[si].Len() > 0)
+                                    Ar.Printf(" DEFRUN%d=%s", si, *N.DefaultRunSound[si]);
+                                if (N.GrassWalkSound[si].Len() > 0)
+                                    Ar.Printf(" GRASSWALK%d=%s", si, *N.GrassWalkSound[si]);
+                                if (N.GrassRunSound[si].Len() > 0)
+                                    Ar.Printf(" GRASSRUN%d=%s", si, *N.GrassRunSound[si]);
+                                if (N.WaterWalkSound[si].Len() > 0)
+                                    Ar.Printf(" WATERWALK%d=%s", si, *N.WaterWalkSound[si]);
+                                if (N.WaterRunSound[si].Len() > 0)
+                                    Ar.Printf(" WATERRUN%d=%s", si, *N.WaterRunSound[si]);
+                                if (N.DefaultActorWalkSound[si].Len() > 0)
+                                    Ar.Printf(" ACTORWALK%d=%s", si, *N.DefaultActorWalkSound[si]);
+                                if (N.DefaultActorRunSound[si].Len() > 0)
+                                    Ar.Printf(" ACTORRUN%d=%s", si, *N.DefaultActorRunSound[si]);
+                            }
+                            Ar.Printf("\n");
+                        }
+                        else if (N.Function.Len() > 0 && N.Function != "PlaySound" && N.Function != "None")
+                        {
+                            // Voice notify without specific sound - export function name (e.g., AttackVoice)
+                            Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=%s\n",
+                                *Seq.Name, N.Time, *N.Function);
+                        }
                     }
-                    // else: skip notify without sound and without function
                     break;
 
                 case EAnimNotifyType::Effect:
@@ -676,6 +727,31 @@ static void ExportAnimScript(const CAnimSet* Anim, const UObject* OriginalAnim)
                         Ar.Printf(" EFFECT=%s", *N.EffectClassName);
                     if (N.BoneName.Len() > 0)
                         Ar.Printf(" BONE=%s", *N.BoneName);
+                    // Export offset location if non-zero
+                    if (N.OffsetLocation.X != 0 || N.OffsetLocation.Y != 0 || N.OffsetLocation.Z != 0)
+                        Ar.Printf(" OFFSET=%.2f,%.2f,%.2f", N.OffsetLocation.X, N.OffsetLocation.Y, N.OffsetLocation.Z);
+                    // Export offset rotation if non-zero
+                    if (N.OffsetRotation.Pitch != 0 || N.OffsetRotation.Yaw != 0 || N.OffsetRotation.Roll != 0)
+                        Ar.Printf(" ROTATION=%d,%d,%d", N.OffsetRotation.Pitch, N.OffsetRotation.Yaw, N.OffsetRotation.Roll);
+                    // Export scale if not default (1.0)
+                    if (N.DrawScale != 1.0f)
+                        Ar.Printf(" SCALE=%.2f", N.DrawScale);
+                    // Export non-uniform scale if different from uniform (1,1,1)
+                    if (N.DrawScale3D.X != 1.0f || N.DrawScale3D.Y != 1.0f || N.DrawScale3D.Z != 1.0f)
+                        Ar.Printf(" SCALE3D=%.2f,%.2f,%.2f", N.DrawScale3D.X, N.DrawScale3D.Y, N.DrawScale3D.Z);
+                    // Export attach flag only if false (default is true)
+                    if (!N.bAttach)
+                        Ar.Printf(" ATTACH=0");
+                    // Export effect tag if present
+                    if (N.EffectTag.Len() > 0)
+                        Ar.Printf(" TAG=%s", *N.EffectTag);
+                    // L2-specific effect fields
+                    if (N.bTrailCamera)
+                        Ar.Printf(" TRAILCAM=1");
+                    if (N.bIndependentRotation)
+                        Ar.Printf(" INDEPROT=1");
+                    if (N.EffectScale != 1.0f)
+                        Ar.Printf(" EFFECTSCALE=%.2f", N.EffectScale);
                     Ar.Printf("\n");
                     break;
 
@@ -689,8 +765,13 @@ static void ExportAnimScript(const CAnimSet* Anim, const UObject* OriginalAnim)
                     break;
 
                 case EAnimNotifyType::DestroyEffect:
-                    Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=DestroyEffect\n",
+                    Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=DestroyEffect",
                         *Seq.Name, N.Time);
+                    if (N.EffectTag.Len() > 0)
+                        Ar.Printf(" TAG=%s", *N.EffectTag);
+                    if (!N.bExpireParticles)
+                        Ar.Printf(" EXPIRE=0");
+                    Ar.Printf("\n");
                     break;
 
                 // Lineage 2 specific combat notifies

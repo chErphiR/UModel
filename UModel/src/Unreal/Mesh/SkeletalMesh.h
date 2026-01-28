@@ -309,13 +309,53 @@ struct CAnimNotify
     FString BoneName;            // Bone name for attachment
     float Volume;                // Sound volume
     float Radius;                // Sound radius
+    // Effect-specific fields
+    FVector OffsetLocation;      // Effect spawn offset location
+    FRotator OffsetRotation;     // Effect spawn offset rotation
+    float DrawScale;             // Effect scale (uniform)
+    FVector DrawScale3D;         // Effect scale (non-uniform)
+    bool bAttach;                // Whether effect is attached to bone
+    FString EffectTag;           // Effect tag for DestroyEffect
+    
+    // L2-specific Effect fields
+    bool bTrailCamera;           // Camera trailing effect
+    bool bIndependentRotation;   // Independent rotation from bone
+    float EffectScale;           // Additional effect scale factor
+    
+    // L2-specific footstep sound arrays (3 sounds each for random selection)
+    FString DefaultWalkSound[3];
+    FString DefaultRunSound[3];
+    FString GrassWalkSound[3];
+    FString GrassRunSound[3];
+    FString WaterWalkSound[3];
+    FString WaterRunSound[3];
+    FString DefaultActorWalkSound[3];
+    FString DefaultActorRunSound[3];
+    int SoundRandom;             // Random sound selection mode
+    
+    // DestroyEffect specific
+    bool bExpireParticles;       // Expire particles smoothly instead of instant destroy
+    
+    // L2-specific voice type (for PawnStatusVoice)
+    FString VoiceType;           // Voice type (Death, Hit, Victory, etc.)
 
     CAnimNotify()
         : Time(0)
         , Type(EAnimNotifyType::Unknown)
         , Volume(1.0f)
         , Radius(0)
-    {}
+        , DrawScale(1.0f)
+        , bAttach(true)
+        , bTrailCamera(false)
+        , bIndependentRotation(false)
+        , EffectScale(1.0f)
+        , SoundRandom(0)
+        , bExpireParticles(true)
+    {
+        OffsetLocation.Set(0, 0, 0);
+        OffsetRotation.Set(0, 0, 0);
+        DrawScale3D.Set(1, 1, 1);
+    }
 };
 
 class CAnimSequence

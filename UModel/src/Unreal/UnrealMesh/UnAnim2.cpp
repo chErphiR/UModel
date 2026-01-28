@@ -125,9 +125,10 @@ void UMeshAnimation::ConvertAnims()
                     {
                         N.Type = EAnimNotifyType::Sound;
                         UAnimNotify_PawnStatusVoice* VoiceNotify = static_cast<UAnimNotify_PawnStatusVoice*>(SrcNotify.NotifyObj);
-                        // Use VoiceType as function name
+                        // Store VoiceType separately
                         if (VoiceNotify->VoiceType != "None")
                         {
+                            N.VoiceType = *VoiceNotify->VoiceType;
                             N.Function = *VoiceNotify->VoiceType;
                         }
                         // Use inherited Sound property
@@ -156,11 +157,30 @@ void UMeshAnimation::ConvertAnims()
                             // Sound object is NULL (external package not loaded), use cached import name
                             N.SoundName = SoundNotify->SoundImportName;
                         }
-                        // Note: Some L2 notifies (footsteps, dances) use sound arrays
-                        // (DefaultWalkSound, etc.) instead of single Sound property.
-                        // These notifies will have empty SoundName - this is intentional.
                         N.Volume = SoundNotify->Volume;
-                        // Note: Radius is dropped via PROP_DROP in Lineage 2 due to type inconsistency
+                        #if LINEAGE2
+                        // Extract L2 footstep sound arrays
+                        N.SoundRandom = SoundNotify->Random;
+                        for (int si = 0; si < 3; si++)
+                        {
+                            if (SoundNotify->DefaultWalkSound[si])
+                                N.DefaultWalkSound[si] = SoundNotify->DefaultWalkSound[si]->Name;
+                            if (SoundNotify->DefaultRunSound[si])
+                                N.DefaultRunSound[si] = SoundNotify->DefaultRunSound[si]->Name;
+                            if (SoundNotify->GrassWalkSound[si])
+                                N.GrassWalkSound[si] = SoundNotify->GrassWalkSound[si]->Name;
+                            if (SoundNotify->GrassRunSound[si])
+                                N.GrassRunSound[si] = SoundNotify->GrassRunSound[si]->Name;
+                            if (SoundNotify->WaterWalkSound[si])
+                                N.WaterWalkSound[si] = SoundNotify->WaterWalkSound[si]->Name;
+                            if (SoundNotify->WaterRunSound[si])
+                                N.WaterRunSound[si] = SoundNotify->WaterRunSound[si]->Name;
+                            if (SoundNotify->DefaultActorWalkSound[si])
+                                N.DefaultActorWalkSound[si] = SoundNotify->DefaultActorWalkSound[si]->Name;
+                            if (SoundNotify->DefaultActorRunSound[si])
+                                N.DefaultActorRunSound[si] = SoundNotify->DefaultActorRunSound[si]->Name;
+                        }
+                        #endif
                     }
                     else if (SrcNotify.NotifyObj->IsA("AnimNotify_Effect"))
                     {
@@ -171,10 +191,25 @@ void UMeshAnimation::ConvertAnims()
                             N.EffectClassName = EffectNotify->EffectClass->Name;
                         }
                         N.BoneName = *EffectNotify->Bone;
+                        N.OffsetLocation = EffectNotify->OffsetLocation;
+                        N.OffsetRotation = EffectNotify->OffsetRotation;
+                        N.DrawScale = EffectNotify->DrawScale;
+                        N.DrawScale3D = EffectNotify->DrawScale3D;
+                        N.bAttach = EffectNotify->Attach;
+                        N.EffectTag = *EffectNotify->Tag;
+                        #if LINEAGE2
+                        // Extract L2-specific effect fields
+                        N.bTrailCamera = EffectNotify->TrailCamera;
+                        N.bIndependentRotation = EffectNotify->IndependentRotation;
+                        N.EffectScale = EffectNotify->EffectScale;
+                        #endif
                     }
                     else if (SrcNotify.NotifyObj->IsA("AnimNotify_DestroyEffect"))
                     {
                         N.Type = EAnimNotifyType::DestroyEffect;
+                        UAnimNotify_DestroyEffect* DestroyNotify = static_cast<UAnimNotify_DestroyEffect*>(SrcNotify.NotifyObj);
+                        N.EffectTag = *DestroyNotify->DestroyTag;
+                        N.bExpireParticles = DestroyNotify->bExpireParticles;
                     }
                     else if (SrcNotify.NotifyObj->IsA("AnimNotify_Trigger"))
                     {
