@@ -112,11 +112,7 @@ class UAnimNotify_Sound : public UAnimNotify
         UObject* Sound; // USound*
         FString SoundImportName; // Stored sound name from import (for when package not available)
         float Volume;
-        #if LINEAGE2
-        float Radius;  // float in Lineage 2
-        #else
         int Radius;
-        #endif
         #if LINEAGE2
         int Random;
         UObject* DefaultWalkSound[3];
@@ -140,10 +136,7 @@ class UAnimNotify_Sound : public UAnimNotify
             PROP_OBJ(Sound)
             PROP_FLOAT(Volume)
             #if LINEAGE2
-            PROP_DROP(Radius)  // Type varies between int/float in L2 data
             PROP_INT(Random)
-            #else
-            PROP_INT(Radius)
             #endif
             #if LINEAGE2
             PROP_OBJ(DefaultWalkSound)

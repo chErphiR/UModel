@@ -685,10 +685,7 @@ static void ExportAnimScript(const CAnimSet* Anim, const UObject* OriginalAnim)
                     {
                         Ar.Printf("#exec ANIM NOTIFY SEQ=%s TIME=%g FUNCTION=PlaySound SOUND=%s",
                             *Seq.Name, N.Time, *N.SoundName);
-                        if (N.Volume != 1.0f)
-                            Ar.Printf(" VOLUME=%g", N.Volume);
-                        if (N.Radius != 0)
-                            Ar.Printf(" RADIUS=%d", N.Radius);
+                        Ar.Printf(" VOLUME=%g", N.Volume);
                         // Export VoiceType if present (for PawnStatusVoice)
                         if (N.VoiceType.Len() > 0)
                             Ar.Printf(" VOICETYPE=%s", *N.VoiceType);

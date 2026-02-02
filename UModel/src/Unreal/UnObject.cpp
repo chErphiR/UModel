@@ -1163,6 +1163,11 @@ void CTypeInfo::ReadUnrealProperty(FArchive& Ar, FPropertyTag& Tag, void* Object
             case NAME_FloatProperty:
                 CHECK_TYPE(PropType::Float);
                 Ar << PROP(float);
+                // L2 uses custom volume scale where 250 = 1.0
+                if (strcmp(*Tag.Name, "Volume") == 0 && PROP(float) > 1.0f)
+                {
+                    PROP(float) = PROP(float) / 250.0f;
+                }
                 PROP_DBG("%g", PROP(float));
                 break;
 
